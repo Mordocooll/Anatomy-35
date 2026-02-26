@@ -1,0 +1,291 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Scapula Quiz</title>
+
+  <style>
+    body { font-family: Arial; margin: 40px; }
+
+    /* Layout: image left, dropdown right */
+    .main {
+      display: flex;
+      align-items: flex-start;
+      gap: 30px;
+    }
+
+    .stage {
+      position: relative;
+      width: 600px;
+      flex-shrink: 0;
+    }
+
+    .stage img {
+      width: 100%;
+      border: 1px solid black;
+      display: block;
+    }
+
+    /* DOT COLORS */
+    .hotspot {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid black;
+      transform: translate(-50%, -50%);
+      background: red;
+    }
+
+    .hotspot.current {
+      background: blue;
+      outline: 4px solid gold;
+    }
+
+    .hotspot.correct {
+      background: green;
+      outline: none;
+    }
+
+    input {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 10px;
+      width: 320px;
+    }
+
+    button {
+      padding: 10px;
+      font-size: 16px;
+      margin-left: 6px;
+      cursor: pointer;
+    }
+
+    #result {
+      margin-top: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      min-height: 24px;
+    }
+
+    .row {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* RIGHT SIDE DROPDOWN PANEL */
+    .panel {
+      width: 280px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    details summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .parts {
+      margin-top: 10px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .parts li {
+      padding: 4px 0;
+    }
+
+    .parts li.unanswered {
+      color: black;
+    }
+
+    .parts li.answered {
+      color: blue;
+      font-weight: bold;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<h1>Scapula Quiz</h1>
+
+<div class="main">
+
+  <!-- LEFT: IMAGE -->
+  <div class="stage" id="stage">
+
+    <img src="Images/scapula_base.png">
+
+    <div class="hotspot" data-answer="Acromion" style="left: 22.00%; top: 8.15%;"></div>
+    <div class="hotspot" data-answer="Coracoid process" style="left: 36.17%; top: 10.56%;"></div>
+    <div class="hotspot" data-answer="Scapular notch" style="left: 49.33%; top: 10.08%;"></div>
+    <div class="hotspot" data-answer="Superior border" style="left: 61.83%; top: 10.40%;"></div>
+    <div class="hotspot" data-answer="Superior angle" style="left: 73.50%; top: 10.73%;"></div>
+    <div class="hotspot" data-answer="Subscapular fossa" style="left: 81.67%; top: 20.23%;"></div>
+    <div class="hotspot" data-answer="Medial border" style="left: 86.17%; top: 59.39%;"></div>
+    <div class="hotspot" data-answer="Inferior angle" style="left: 64.17%; top: 92.74%;"></div>
+    <div class="hotspot" data-answer="Lateral border" style="left: 35.67%; top: 65.35%;"></div>
+    <div class="hotspot" data-answer="Neck" style="left: 28.50%; top: 54.72%;"></div>
+    <div class="hotspot" data-answer="Infraglenoid tubercle" style="left: 22.50%; top: 46.34%;"></div>
+    <div class="hotspot" data-answer="Glenoid cavity" style="left: 19.00%; top: 40.37%;"></div>
+    <div class="hotspot" data-answer="Lateral angle" style="left: 20.17%; top: 32.80%;"></div>
+    <div class="hotspot" data-answer="Supraglenoid tubercle" style="left: 20.17%; top: 25.23%;"></div>
+
+  </div>
+
+  <!-- RIGHT: DROPDOWN -->
+  <div class="panel">
+
+    <details open>
+
+      <summary id="partsSummary">Bone part names</summary>
+
+      <ul id="partsList" class="parts"></ul>
+
+    </details>
+
+  </div>
+
+</div>
+
+<div class="row">
+
+  <input type="text" id="answer" placeholder="Type your answer...">
+
+  <button onclick="submitAnswer()">Submit</button>
+
+  <button onclick="nextQuestion()">Skip</button>
+
+  <span id="progress"></span>
+
+</div>
+
+<p id="result"></p>
+
+<br>
+<a href="bones.html">← Back to Bones</a>
+
+<script>
+
+const dots = Array.from(document.querySelectorAll(".hotspot"))
+
+let currentDot = null
+
+const answerEl = document.getElementById("answer")
+const resultEl = document.getElementById("result")
+const partsListEl = document.getElementById("partsList")
+const partsSummaryEl = document.getElementById("partsSummary")
+const progressEl = document.getElementById("progress")
+
+function normalize(s){
+  return s.trim().toLowerCase()
+}
+
+function isCorrect(dot){
+  return dot.classList.contains("correct")
+}
+
+function updateDropdown(){
+
+  partsListEl.innerHTML=""
+
+  dots.sort((a,b)=>a.dataset.answer.localeCompare(b.dataset.answer))
+
+  dots.forEach(dot=>{
+
+    const li=document.createElement("li")
+
+    li.textContent=dot.dataset.answer
+
+    li.className=isCorrect(dot)?"answered":"unanswered"
+
+    partsListEl.appendChild(li)
+
+  })
+
+  const done=dots.filter(isCorrect).length
+
+  partsSummaryEl.textContent="Bone part names ("+done+"/"+dots.length+")"
+
+  progressEl.textContent="Progress: "+done+"/"+dots.length
+
+}
+
+function pickRandom(){
+
+  const remaining=dots.filter(d=>!isCorrect(d))
+
+  if(remaining.length===0) return null
+
+  return remaining[Math.floor(Math.random()*remaining.length)]
+
+}
+
+function nextQuestion(){
+
+  if(currentDot && !isCorrect(currentDot))
+    currentDot.classList.remove("current")
+
+  currentDot=pickRandom()
+
+  if(!currentDot){
+
+    resultEl.textContent="Complete"
+
+    return
+  }
+
+  currentDot.classList.add("current")
+
+  answerEl.value=""
+
+  answerEl.focus()
+
+}
+
+function submitAnswer(){
+
+  if(!currentDot) return
+
+  const user=normalize(answerEl.value)
+
+  const correct=normalize(currentDot.dataset.answer)
+
+  if(user===correct){
+
+    currentDot.classList.remove("current")
+
+    currentDot.classList.add("correct")
+
+    resultEl.textContent="Correct: "+currentDot.dataset.answer
+
+    updateDropdown()
+
+    setTimeout(nextQuestion,600)
+
+  }
+  else{
+
+    resultEl.textContent="Incorrect"
+
+  }
+
+}
+
+answerEl.addEventListener("keydown",e=>{
+  if(e.key==="Enter") submitAnswer()
+})
+
+updateDropdown()
+
+nextQuestion()
+
+</script>
+
+</body>
+</html>
